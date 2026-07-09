@@ -11,7 +11,6 @@ import json
 from datetime import datetime
 import operator
 import re
-import six
 from frappe.utils import get_site_name
 import zipfile
 from frappe.utils.background_jobs import enqueue, get_jobs
@@ -30,7 +29,7 @@ def read_xml(file_path, name):
         file = path_to_file_folder + name
     with open(file, "r") as f:
         contents = f.read()
-        soup = BeautifulSoup(six.text_type(contents), 'xml')
+        soup = BeautifulSoup(str(contents), 'xml')
         try:
             file = {
                 'name': name,
@@ -66,7 +65,7 @@ def import_update_items(xml_files):
         job_name='Import / Update Items from BKP File(s)'
         if method not in queued_jobs[frappe.local.site]:
             frappe.msgprint(_("Der Import / Das Updaten wurde gestartet. Bitte warten Sie bis der Backgroundjob ausgeführt wurde.<br>Prüfen Sie im Anschluss den Errorlog auf allfällige Fehler."), 'Import / Update gestartet')
-            enqueue(method=method, queue=queue, timeout=max_time, event=None, is_async=True, job_name=job_name, now=False, enqueue_after_commit=False, **args)
+            enqueue(method=method, queue=queue, timeout=max_time, event=None, job_id=job_name, now=False, enqueue_after_commit=False, **args)
             return
         else:
             frappe.msgprint(_("Der Backup Job wurde bereits gestartet. Bitte warten Sie bis das System Ihnen mitteilt dass der Job erledigt ist."), 'Bitte Warten')
@@ -83,7 +82,7 @@ def _import_update_items(xml_files, site_name):
         file = '/home/frappe/frappe-bench/sites/' + site_name + '/private/files/' + file_name
         with open(file, "r") as f:
             contents = f.read()
-            soup = BeautifulSoup(six.text_type(contents), 'xml')
+            soup = BeautifulSoup(str(contents), 'xml')
             try:
                 items = soup.DataExpert.Body.find_all('Artikel')
                 item_group = soup.DataExpert.Head.Anbieter.Firma.get_text()

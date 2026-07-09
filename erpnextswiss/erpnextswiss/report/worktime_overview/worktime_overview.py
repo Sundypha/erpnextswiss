@@ -6,8 +6,21 @@ import frappe
 from frappe import _
 from frappe.utils.data import date_diff, getdate, add_days
 from datetime import date, timedelta
-from erpnext.hr.doctype.leave_application.leave_application import get_leave_details
 from frappe.utils import cint
+
+
+def get_leave_details(employee, to_date):
+    # HR / Payroll was split out of ERPNext into the separate `hrms` app in v14.
+    # Import lazily so migrate/build never fail on this report module, and fall
+    # back to the legacy erpnext.hr path for pre-v14 sites.
+    try:
+        from hrms.hr.doctype.leave_application.leave_application import get_leave_details as _impl
+    except ImportError:
+        try:
+            from erpnext.hr.doctype.leave_application.leave_application import get_leave_details as _impl
+        except ImportError:
+            frappe.throw(_("The Worktime Overview report requires the HRMS app. Install it with `bench get-app hrms`."))
+    return _impl(employee, to_date)
 
 def execute(filters=None):
     if "HR Manager" in frappe.get_roles(frappe.session.user):

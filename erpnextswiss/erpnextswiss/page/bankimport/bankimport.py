@@ -11,7 +11,6 @@ import json
 from datetime import datetime
 import operator
 import re
-import six
 
 def parse_ubs(content, account, auto_submit=False):
     # parse a ubs bank extract csv
@@ -369,7 +368,7 @@ def parse_voba(content, account, auto_submit=False):
                     if fields[AMOUNTTYPE] == "H":
                         if received_amount > 0:
                             # get unique transaction ID
-                            transaction_id = hashlib.md5("{0}:{1}:{2}".format(fields[BOOKED_AT], fields[AMOUNT], fields[SENDER])).hexdigest()
+                            transaction_id = hashlib.md5("{0}:{1}:{2}".format(fields[BOOKED_AT], fields[AMOUNT], fields[SENDER]).encode('utf-8')).hexdigest()
                             #log("Checking transaction {0}".format(transaction_id))
                             # cross-check if this transaction was already recorded
                             if not frappe.db.exists('Payment Entry', {'reference_no': transaction_id}):
@@ -452,7 +451,7 @@ def parse_ksk(content, account, auto_submit=False):
                     #log("Received amount {0}".format(received_amount))
                     if received_amount > 0:
                         # get unique transaction ID
-                        transaction_id = hashlib.md5("{0}:{1}:{2}".format(fields[BOOKED_AT], fields[AMOUNT], fields[SENDER])).hexdigest()
+                        transaction_id = hashlib.md5("{0}:{1}:{2}".format(fields[BOOKED_AT], fields[AMOUNT], fields[SENDER]).encode('utf-8')).hexdigest()
                         #log("Checking transaction {0}".format(transaction_id))
                         # cross-check if this transaction was already recorded
                         if not frappe.db.exists('Payment Entry', {'reference_no': transaction_id}):
@@ -657,10 +656,6 @@ def parse_file(content, bank, account, auto_submit=False, debug=False):
         if debug: frappe.msgprint(_("Parse file by template"))
         new_records = parse_by_template(content, bank_doc[0]['csv_template'], account, auto_submit, debug)
     else:
-        # Decode content with default ascii encoding in Python 2.x
-        if six.PY2:
-            content = (b""+ content).decode("ascii")
-
         if bank == "ubs":
             new_records = parse_ubs(content, account, auto_submit)
         elif bank == "zkb":
@@ -696,9 +691,7 @@ def parse_by_template(content, bank, account, auto_submit=False, debug=False):
     template = frappe.get_doc("BankImport Template",bank)
     
     # collect all lines of the file
-    if six.PY2:
-        content = (b""+ content).decode(template.file_encoding)
-    
+
     # collect created payment entries
     new_payment_entries = []
     # get default customer
@@ -712,12 +705,9 @@ def parse_by_template(content, bank, account, auto_submit=False, debug=False):
         # get value from csv template
         value = getattr(template,docItemName,None)
         if value is not None:
-            if isinstance(value, six.string_types):
+            if isinstance(value, str):
                 # remove escape chars and return value
-                if six.PY2:
-                    return value.decode("unicode_escape")
-                else:
-                    return bytearray(value, "utf-8").decode("unicode_escape")
+                return bytearray(value, "utf-8").decode("unicode_escape")
             elif isinstance(value, int):
                 if int(value) >= 0:
                     return int(value)
@@ -787,10 +777,7 @@ def parse_by_template(content, bank, account, auto_submit=False, debug=False):
     
     # Split content lines
     try:
-        if six.PY2:
-            lines = content.split(template.line_seperator.decode("unicode_escape"))
-        else:
-            lines = content.split(bytearray(template.line_seperator, "utf-8").decode("unicode_escape"))
+        lines = content.split(bytearray(template.line_seperator, "utf-8").decode("unicode_escape"))
     except Exception as e:
         frappe.throw(_("Could not split lines by \"{0}\" with error: {1}").format(bytearray(template.line_seperator, "utf-8").decode("unicode_escape"), str(e)))
     if debug:
@@ -807,10 +794,7 @@ def parse_by_template(content, bank, account, auto_submit=False, debug=False):
                         lines[i] = tpl_regex_replace(item.reg_match, item.reg_sub, lines[i], item.titel)
                         
             # Split fields by delimiter
-            if six.PY2:
-                fields = lines[i].split(template.delimiter.decode("unicode_escape"))
-            else:
-                fields = lines[i].split(bytearray(template.delimiter, "utf-8").decode("unicode_escape"))
+            fields = lines[i].split(bytearray(template.delimiter, "utf-8").decode("unicode_escape"))
             # Print line with field index
             if debug:
                 string = ""
@@ -916,22 +900,16 @@ def parse_by_template(content, bank, account, auto_submit=False, debug=False):
 def tpl_regex_replace(reg_find, reg_replace, content, stage, reg_group=""):
     # Validate arguments
     try:
-        if not isinstance(reg_find, six.string_types) and not reg_find:
+        if not isinstance(reg_find, str) and not reg_find:
             frappe.throw("Template parameter invalid, please check regex find setting")
         else:
-            if six.PY2:
-                reg_find = reg_find.decode("unicode_escape")
-            else:
-                reg_find = bytearray(reg_find, "utf-8").decode("unicode_escape")
-        if not isinstance(reg_replace, six.string_types):
+            reg_find = bytearray(reg_find, "utf-8").decode("unicode_escape")
+        if not isinstance(reg_replace, str):
             reg_replace = ""
         elif not reg_replace:
             reg_replace = ""
         else:
-            if six.PY2:
-                reg_replace = reg_replace.decode("unicode_escape")
-            else:
-                reg_replace = bytearray(reg_replace, "utf-8").decode("unicode_escape")
+            reg_replace = bytearray(reg_replace, "utf-8").decode("unicode_escape")
     except Exception as e:
         frappe.throw(_("Validation failed with error: {0}").format(str(e)))
     # Substitute content with regex
@@ -1017,20 +995,20 @@ def read_camt054(content, bank, account, auto_submit=False):
 def read_camt_transactions(transaction_entries, bank, account, auto_submit=False):
     new_payment_entries = []
     for entry in transaction_entries:
-        entry_soup = BeautifulSoup(six.text_type(entry), 'lxml')
+        entry_soup = BeautifulSoup(str(entry), 'lxml')
         date = entry_soup.bookgdt.dt.get_text()
         transactions = entry_soup.find_all('txdtls')
         # fetch entry amount as fallback
         entry_amount = float(entry_soup.amt.get_text())
         entry_currency = entry_soup.amt['ccy']
         for transaction in transactions:
-            transaction_soup = BeautifulSoup(six.text_type(transaction), 'lxml')
+            transaction_soup = BeautifulSoup(str(transaction), 'lxml')
             try:
                 unique_reference = transaction_soup.refs.acctsvcrref.get_text()
                 amount = float(transaction_soup.amt.get_text())
                 currency = transaction_soup.amt['ccy']
                 try:
-                    party_soup = BeautifulSoup(six.text_type(transaction_soup.dbtr), 'lxml')
+                    party_soup = BeautifulSoup(str(transaction_soup.dbtr), 'lxml')
                     customer_name = party_soup.nm.get_text()
                     try:
                         street = party_soup.strtnm.get_text()
@@ -1066,7 +1044,7 @@ def read_camt_transactions(transaction_entries, bank, account, auto_submit=False
                         customer_iban = transaction_soup.dbtracct.id.iban.get_text()
                     except Exception as e:
                         customer_iban = ""
-                        frappe.log_error("Error parsing customer info: {0} ({1})".format(e, six.text_type(transaction_soup.dbtr)))
+                        frappe.log_error("Error parsing customer info: {0} ({1})".format(e, str(transaction_soup.dbtr)))
                         # key related parties not found / no customer info
                         customer_name = "Postschalter"
                         customer_address = ""
@@ -1097,6 +1075,6 @@ def read_camt_transactions(transaction_entries, bank, account, auto_submit=False
                     if inserted_payment_entry:
                         new_payment_entries.append(inserted_payment_entry.name)
             except Exception as e:
-                frappe.msgprint("Parsing error: {0}:{1}".format(six.text_type(transaction), e))
+                frappe.msgprint("Parsing error: {0}:{1}".format(str(transaction), e))
                 pass
     return new_payment_entries

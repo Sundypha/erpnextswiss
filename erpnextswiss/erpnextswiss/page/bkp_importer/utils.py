@@ -18,7 +18,7 @@ def calc_structur_organisation_totals(dt, dn):
         'dt': dt,
         'dn': dn
     }
-    enqueue("erpnextswiss.erpnextswiss.page.bkp_importer.utils._calc_structur_organisation_totals", queue='long', job_name='Calc HLK Totals {0}'.format(dn), timeout=1500, **args)
+    enqueue("erpnextswiss.erpnextswiss.page.bkp_importer.utils._calc_structur_organisation_totals", queue='long', job_id='Calc HLK Totals {0}'.format(dn), timeout=1500, **args)
     return 'Calc HLK Totals {0}'.format(dn)
 
 def _calc_structur_organisation_totals(dt, dn):
@@ -95,7 +95,7 @@ def transfer_structur_organisation_discounts(dt, dn):
         'dt': dt,
         'dn': dn
     }
-    enqueue("erpnextswiss.erpnextswiss.page.bkp_importer.utils._transfer_structur_organisation_discounts", queue='long', job_name='transfer_structur_organisation_discounts {0}'.format(dn), timeout=1500, **args)
+    enqueue("erpnextswiss.erpnextswiss.page.bkp_importer.utils._transfer_structur_organisation_discounts", queue='long', job_id='transfer_structur_organisation_discounts {0}'.format(dn), timeout=1500, **args)
     return 'transfer_structur_organisation_discounts {0}'.format(dn)
 
 @frappe.whitelist()
@@ -352,7 +352,12 @@ def is_any_job_running(doctype, docname):
 def get_info(jobname):
     from rq import Queue, Worker
     from frappe.utils.background_jobs import get_redis_conn
-    from frappe.utils import format_datetime, cint, convert_utc_to_user_timezone
+    # convert_utc_to_user_timezone was renamed to convert_utc_to_system_timezone in v14.
+    from frappe.utils import format_datetime, cint
+    try:
+        from frappe.utils import convert_utc_to_system_timezone
+    except ImportError:  # pragma: no cover - legacy < v14
+        from frappe.utils import convert_utc_to_user_timezone as convert_utc_to_system_timezone
     colors = {
         'queued': 'orange',
         'failed': 'red',
@@ -371,7 +376,7 @@ def get_info(jobname):
                 'job_name': j.kwargs.get('kwargs', {}).get('playbook_method') \
                     or str(j.kwargs.get('job_name')),
                 'status': j.status, 'queue': name,
-                'creation': format_datetime(convert_utc_to_user_timezone(j.created_at)),
+                'creation': format_datetime(convert_utc_to_system_timezone(j.created_at)),
                 'color': colors[j.status]
             })
             if j.exc_info:

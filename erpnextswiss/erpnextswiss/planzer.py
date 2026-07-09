@@ -8,7 +8,14 @@ from frappe.utils.password import get_decrypted_password
 import os
 import codecs
 from datetime import datetime, timedelta
-import pysftp
+
+# pysftp (Planzer SFTP upload) is an optional extra (`pip install "erpnextswiss[sftp]"`).
+# Import defensively so this module loads without it; the SFTP transfer helper
+# below raises a clear error if it is actually invoked without the dependency.
+try:
+    import pysftp
+except ImportError:
+    pysftp = None
 
 @frappe.whitelist()
 def create_shipment(shipment_name, debug=False):
@@ -203,6 +210,11 @@ def upload_shipment_file(file_name, target_path):
     return
 
 def connect_sftp(settings):
+    if pysftp is None:
+        frappe.throw(_(
+            "Planzer SFTP upload requires the optional 'pysftp' dependency. "
+            "Install it with: pip install \"erpnextswiss[sftp]\"."
+        ))
     cnopts = pysftp.CnOpts()
     cnopts.hostkeys = settings.get('host_keys') or None        # keep or None to push None instead of ""  
     

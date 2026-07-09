@@ -6,12 +6,25 @@
 
 import fitz             # part of pymupdf (note: for Py3.5, use pymupdf==1.16.18)
 import os
-from PIL import Image
-import cv2              # part of opencv-python
-import numpy as np
 import frappe
 from frappe.utils import flt
 from datetime import date
+
+# OpenCV / NumPy / Pillow are only needed to *read* QR codes out of scanned PDFs.
+# They are an optional extra (`pip install "erpnextswiss[ocr]"`); import them
+# defensively so this module -- and the Zugferd Wizard doctype controller that
+# imports it -- still loads (and `bench migrate`/`bench build` succeed) without
+# them. The pure text-parsing helpers below do not need OpenCV.
+try:
+    from PIL import Image
+    import cv2              # part of opencv-python
+    import numpy as np
+    HAS_OCR = True
+except ImportError:
+    Image = None
+    cv2 = None
+    np = None
+    HAS_OCR = False
 
 settings = {
     'dpi': 300
@@ -19,8 +32,14 @@ settings = {
 
 @frappe.whitelist()
 def find_qr_content_from_pdf(filename):
+    if not HAS_OCR:
+        frappe.throw(frappe._(
+            "Reading QR codes from PDFs requires the optional OCR dependencies "
+            "(opencv-python, numpy, Pillow). Install them with: "
+            "pip install \"erpnextswiss[ocr]\"."
+        ))
     codes = []
-    
+
     # open PDF file
     pdf_file = fitz.open(filename)
 
