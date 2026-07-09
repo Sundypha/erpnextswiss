@@ -22,19 +22,39 @@ The software comes as-is without any warranty.
 Requires an ERPNext server instance (refer to [https://github.com/frappe/erpnext](https://github.com/frappe/erpnext))
 
 ## Compatibility
-ERPNextSwiss is tested against libracore and ERPNext v12. There are compatibility branches for v11 (for user who prefer the old desk) and v13/v14/v15.
+ERPNextSwiss provides version branches for the Frappe/ERPNext release it targets.
+There are compatibility branches for v11 (for users who prefer the old desk) and
+v13/v14/v15, `master` (v14/v15), and **`version-16`** for Frappe/ERPNext v16.
+
+The `version-16` branch installs, migrates and builds cleanly on **Python 3.11–3.14**
+(Frappe v16 itself runs on Python 3.14). Framework compatibility is declared in
+`pyproject.toml` under `[tool.bench.frappe-dependencies]`.
 
 ## Installation
-From the frappe-bench folder, execute
+From the frappe-bench folder, execute (for a Frappe/ERPNext v16 bench, use the
+`version-16` branch):
 
-    $ bench get-app https://github.com/libracore/erpnextswiss.git
-    $ bench install-app erpnextswiss
-    
-If you are using a multi-tenant environment, use the following for the installation
-
+    $ bench get-app https://github.com/libracore/erpnextswiss.git --branch version-16
     $ bench --site site_name install-app erpnextswiss
-    
+
 (where site_name is e.g. erp.example.com)
+
+For a `frappe_docker` layered build, add to your `apps.json`:
+
+    { "url": "https://github.com/libracore/erpnextswiss", "branch": "version-16" }
+
+### Optional dependencies
+The default install stays lean. Some features need extra Python packages, declared
+as extras in `pyproject.toml`:
+
+    $ pip install -e "apps/erpnextswiss[ocr]"    # read QR codes from scanned PDFs (opencv-python, numpy)
+    $ pip install -e "apps/erpnextswiss[ebics]"  # EBICS bank connectivity (licensed `fintech` library)
+    $ pip install -e "apps/erpnextswiss[sftp]"   # Planzer SFTP shipment upload (pysftp)
+    $ pip install -e "apps/erpnextswiss[all]"    # all of the above
+
+The Human-Resources features (Salary Certificate, worktime reporting, automatic
+settling of salary/expense payments, and doctypes that link to Employee / Salary
+Slip) require the [`hrms`](https://github.com/frappe/hrms) app to be installed.
 
 ## Update
 Run updates with
