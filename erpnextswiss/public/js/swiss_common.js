@@ -343,6 +343,6 @@ function unlink_asset(force=false) {
             }
         )
     } else {
-        frappe.mgsprint( __("Cannot unlink this document") );
+        frappe.msgprint( __("Cannot unlink this document") );
     }
 }

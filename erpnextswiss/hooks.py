@@ -16,11 +16,20 @@ app_license = "AGPL"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/erpnextswiss/css/erpnextswiss.css"
+#
+# These are legacy classic scripts that expose a *global* helper API
+# (check_esr, esr_sales_invoice, get_esr_code, get_city_from_pincode, iban_*, ...)
+# consumed by doctype client scripts and by customer-side Client Scripts. They are
+# therefore included as raw assets rather than esbuild `*.bundle.js` modules:
+# frappe v16 serves `/assets/...` paths through bundled_asset() unchanged, so the
+# global scope (and backwards compatibility with existing custom scripts) is kept.
+# The pre-v14 public/build.json pipeline and the dead, esbuild-incompatible
+# `assets/js/erpnextswiss_templates.min.js` include have been removed (the
+# transaction_table template is rendered server-side, not from frappe.templates).
 app_include_js = [
     "/assets/erpnextswiss/js/swiss_common.js",
     "/assets/erpnextswiss/js/iban.js",
-    "/assets/erpnextswiss/js/email.js",
-    "assets/js/erpnextswiss_templates.min.js"
+    "/assets/erpnextswiss/js/email.js"
 ]
 
 # include js, css files in header of web template

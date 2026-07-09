@@ -12,9 +12,9 @@
         <td style="text-align: right; " >
             
             {% if transaction.credit_debit == "DBIT" %}
-                <span class="octicon octicon-repo-pull"></span>
+                <span style="color: #d9534f;" title="{{ _('Debit') }}">&#9650;</span>
             {% else %}
-                <span class="octicon octicon-repo-push"></span>
+                <span style="color: #5cb85c;" title="{{ _('Credit') }}">&#9660;</span>
             {% endif %}
             {{ transaction.currency }} {{ "{:,.2f}".format(transaction.amount or 0).replace(",", "`") }}
         </td>
