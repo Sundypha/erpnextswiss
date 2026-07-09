@@ -4,7 +4,10 @@
 #
 #
 
-import fitz             # part of pymupdf (note: for Py3.5, use pymupdf==1.16.18)
+try:
+    import fitz             # part of pymupdf
+except ImportError:         # PyMuPDF deprecated the top-level `fitz` alias in favour of `pymupdf`
+    import pymupdf as fitz
 import os
 import frappe
 from frappe.utils import flt

@@ -4,7 +4,10 @@
 #
 #
 
-import fitz
+try:
+    import fitz             # part of pymupdf
+except ImportError:         # PyMuPDF deprecated the top-level `fitz` alias in favour of `pymupdf`
+    import pymupdf as fitz
 import frappe
 
 # from PIL import Image
