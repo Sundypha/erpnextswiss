@@ -1,11 +1,18 @@
-frappe
-bs4
-factur-x>=2.3
-unidecode
-opencv-python
-pymupdf
-fintech
-pysftp
-icalendar
-unidecode
+# NOTE: pyproject.toml is the authoritative source of dependencies for this app.
+# This file is kept only for backward-compatibility / manual `pip install -r`.
+#
+# The framework (frappe / erpnext) is NOT listed here: pinning `frappe` pulls the
+# unrelated `frappe==0.0.1` stub from PyPI and breaks installation inside a bench.
+# Framework compatibility is declared in pyproject.toml
+# ([tool.bench.frappe-dependencies]).
+#
+# Packages already provided by frappe (beautifulsoup4/bs4, Pillow, requests) and
+# erpnext (Unidecode, python-stdnum) are intentionally omitted.
+#
+# Optional features (opencv-python/numpy, fintech, pysftp) are declared as extras
+# in pyproject.toml -- install with e.g. `pip install -e ".[ocr,ebics,sftp]"`.
+
 lxml
+icalendar
+factur-x>=2.3
+pymupdf
