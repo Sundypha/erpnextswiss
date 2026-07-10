@@ -30,8 +30,26 @@ class TestSwissHolidays(unittest.TestCase):
             ],
         )
 
-    def test_easter_2026(self):
+    def test_gl_2025_exact(self):
+        # Backwards check against a different year (Easter 2025 = 20 April).
+        self.assertEqual(
+            parse_holidays('GL', '2025'),
+            [
+                {'date': '01.01.2025', 'description': 'Neujahr'},
+                {'date': '03.04.2025', 'description': 'Näfelser Fahrt'},
+                {'date': '18.04.2025', 'description': 'Karfreitag'},
+                {'date': '21.04.2025', 'description': 'Ostermontag'},
+                {'date': '29.05.2025', 'description': 'Auffahrt'},
+                {'date': '09.06.2025', 'description': 'Pfingstmontag'},
+                {'date': '01.08.2025', 'description': 'Bundesfeier'},
+                {'date': '25.12.2025', 'description': 'Weihnachten'},
+                {'date': '26.12.2025', 'description': 'Stephanstag'},
+            ],
+        )
+
+    def test_easter(self):
         self.assertEqual(_easter(2026), date(2026, 4, 5))
+        self.assertEqual(_easter(2025), date(2025, 4, 20))
 
     def test_year_accepts_int_and_str(self):
         self.assertEqual(parse_holidays('GL', 2026), parse_holidays('GL', '2026'))
