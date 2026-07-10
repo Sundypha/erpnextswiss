@@ -2,7 +2,10 @@
 # Copyright (c) 2018-2019, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 
-from frappe.email.queue import send
+# frappe.email.queue.send was removed in v16; frappe.sendmail is a drop-in for
+# the kwargs used below (recipients/sender/subject/message/reply_to/reference_*/
+# unsubscribe_method) and enqueues into the email queue just like the old send().
+from frappe import sendmail as send
 import frappe
 from frappe.utils.background_jobs import enqueue
 from frappe import _

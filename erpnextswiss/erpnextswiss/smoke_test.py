@@ -35,6 +35,9 @@ CORE_MODULES = [
     "erpnextswiss.erpnextswiss.zugferd.zugferd",
     "erpnextswiss.erpnextswiss.zugferd.qr_reader",
     "erpnextswiss.erpnextswiss.planzer",
+    # EDI + dynamic newsletter -- both used frappe.email.queue.send, removed in v16
+    "erpnextswiss.erpnextswiss.doctype.edi_file.edi_file",
+    "erpnextswiss.erpnextswiss.dynamic_newsletter",
 ]
 
 
