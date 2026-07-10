@@ -93,7 +93,10 @@ jobs:
       - name: Unit tests (offline Swiss holiday computation)
         env:
           ERPNEXTSWISS_IMAGE: erpnextswiss-custom:ci
-        run: docker compose -f .github/helper/docker-compose-ci.yml run --rm backend bench --site test.localhost run-tests --module erpnextswiss.erpnextswiss.test_calendar
+        run: >
+          docker compose -f .github/helper/docker-compose-ci.yml run --rm backend
+          bash -c "bench --site test.localhost set-config allow_tests true &&
+          bench --site test.localhost run-tests --module erpnextswiss.erpnextswiss.test_calendar"
 
       - name: Tear down
         if: ${{ always() }}

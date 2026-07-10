@@ -83,7 +83,10 @@ jobs:
         run: cd ~/frappe-bench && bench --site test_site execute erpnextswiss.erpnextswiss.smoke_test.run
 
       - name: Unit tests (offline Swiss holiday computation)
-        run: cd ~/frappe-bench && bench --site test_site run-tests --module erpnextswiss.erpnextswiss.test_calendar
+        run: |
+          cd ~/frappe-bench
+          bench --site test_site set-config allow_tests true
+          bench --site test_site run-tests --module erpnextswiss.erpnextswiss.test_calendar
 
       - name: Show bench logs (always)
         if: ${{ always() }}
