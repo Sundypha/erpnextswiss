@@ -82,6 +82,9 @@ jobs:
       - name: Smoke test (core feature modules import + ISO 20022 XSD validator)
         run: cd ~/frappe-bench && bench --site test_site execute erpnextswiss.erpnextswiss.smoke_test.run
 
+      - name: Unit tests (offline Swiss holiday computation)
+        run: cd ~/frappe-bench && bench --site test_site run-tests --module erpnextswiss.erpnextswiss.test_calendar
+
       - name: Show bench logs (always)
         if: ${{ always() }}
         run: cat ~/frappe-bench/bench_start.log || true

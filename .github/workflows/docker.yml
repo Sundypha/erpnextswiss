@@ -90,6 +90,11 @@ jobs:
           ERPNEXTSWISS_IMAGE: erpnextswiss-custom:ci
         run: docker compose -f .github/helper/docker-compose-ci.yml run --rm backend bench --site test.localhost execute erpnextswiss.erpnextswiss.smoke_test.run
 
+      - name: Unit tests (offline Swiss holiday computation)
+        env:
+          ERPNEXTSWISS_IMAGE: erpnextswiss-custom:ci
+        run: docker compose -f .github/helper/docker-compose-ci.yml run --rm backend bench --site test.localhost run-tests --module erpnextswiss.erpnextswiss.test_calendar
+
       - name: Tear down
         if: ${{ always() }}
         env:
