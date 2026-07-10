@@ -63,21 +63,30 @@ doctype_list_js = {
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
-# adding Jinja environments
-jenv = {
+# Jinja print helpers.
+#
+# Frappe v13+ reads the `jinja` hook (NOT the pre-v13 `jenv`) via
+# frappe.get_hooks("jinja"), and its loader registers each entry under the
+# function's own __name__ -- the old "alias:path" form is not supported. Using
+# `jenv` here meant modern Frappe ignored all of these, so print formats such as
+# the Lohnausweis threw "'get_primary_company_address' is undefined".
+#
+# These are therefore plain function paths; `get_tax_details` is a thin alias for
+# kontrolle_mwst.get_data (defined in jinja.py) to keep that public helper name.
+jinja = {
     "methods": [
-        "get_tax_details:erpnextswiss.erpnextswiss.report.kontrolle_mwst.kontrolle_mwst.get_data",
-        "get_account_sheets:erpnextswiss.erpnextswiss.finance.get_account_sheets",
-        "get_customer_ledger:erpnextswiss.erpnextswiss.finance.get_customer_ledger",
-        "get_week_from_date:erpnextswiss.erpnextswiss.jinja.get_week_from_date",
-        "strip_html:erpnextswiss.erpnextswiss.jinja.strip_html",
-        "get_accounts_receivable:erpnextswiss.erpnextswiss.jinja.get_accounts_receivable",
-        "get_primary_company_address:erpnextswiss.scripts.crm_tools.get_primary_company_address",
-        "get_primary_customer_address:erpnextswiss.scripts.crm_tools.get_primary_customer_address",
-        "get_primary_supplier_address:erpnextswiss.scripts.crm_tools.get_primary_supplier_address",
-        "get_vat_control_details:erpnextswiss.erpnextswiss.report.kontrolle_mwst.kontrolle_mwst.get_vat_control_details",
-        "get_planzer_barcode:erpnextswiss.erpnextswiss.planzer.get_planzer_barcode",
-        "get_planzer_qr_code:erpnextswiss.erpnextswiss.planzer.get_planzer_qr_code"
+        "erpnextswiss.erpnextswiss.jinja.get_tax_details",
+        "erpnextswiss.erpnextswiss.report.kontrolle_mwst.kontrolle_mwst.get_vat_control_details",
+        "erpnextswiss.erpnextswiss.finance.get_account_sheets",
+        "erpnextswiss.erpnextswiss.finance.get_customer_ledger",
+        "erpnextswiss.erpnextswiss.jinja.get_week_from_date",
+        "erpnextswiss.erpnextswiss.jinja.strip_html",
+        "erpnextswiss.erpnextswiss.jinja.get_accounts_receivable",
+        "erpnextswiss.scripts.crm_tools.get_primary_company_address",
+        "erpnextswiss.scripts.crm_tools.get_primary_customer_address",
+        "erpnextswiss.scripts.crm_tools.get_primary_supplier_address",
+        "erpnextswiss.erpnextswiss.planzer.get_planzer_barcode",
+        "erpnextswiss.erpnextswiss.planzer.get_planzer_qr_code"
     ]
 }
 

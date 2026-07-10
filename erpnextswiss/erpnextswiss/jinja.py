@@ -39,3 +39,10 @@ def get_accounts_receivable(customer):
         return data
     except:
         return []
+
+""" Jinja hook kept under its historical name (-> kontrolle_mwst.get_data).
+    The v16 `jinja` hook registers helpers by their function __name__, so this
+    thin alias preserves the public `get_tax_details` template helper. """
+def get_tax_details(*args, **kwargs):
+    from erpnextswiss.erpnextswiss.report.kontrolle_mwst.kontrolle_mwst import get_data
+    return get_data(*args, **kwargs)
