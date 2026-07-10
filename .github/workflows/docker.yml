@@ -1,0 +1,97 @@
+name: Docker image build & install (version-16)
+
+# Builds the app the exact way production does -- a frappe_docker "custom" layered
+# image on Python 3.14 + uv (FROM python:3.14-slim, bench init --apps_path) -- then
+# stands up a throwaway stack and runs install-app + migrate + build + smoke test.
+# This reproduces the original `uv pip install -e apps/erpnextswiss` (exit 167)
+# failure context and guards against it (and any runtime import regression).
+
+on:
+  push:
+    branches:
+      - version-16
+  pull_request:
+    branches:
+      - version-16
+  workflow_dispatch:
+
+concurrency:
+  group: erpnextswiss-docker-${{ github.event_name }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker-build-install:
+    name: frappe_docker custom image + install/migrate/build
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Clone erpnextswiss
+        uses: actions/checkout@v4
+
+      - name: Clone frappe_docker
+        run: git clone --depth 1 https://github.com/frappe/frappe_docker.git
+
+      - name: Build apps.json (erpnext + hrms + this branch of erpnextswiss)
+        run: |
+          cat > apps.json <<EOF
+          [
+            { "url": "https://github.com/frappe/erpnext", "branch": "version-16" },
+            { "url": "https://github.com/frappe/hrms",    "branch": "version-16" },
+            { "url": "${{ github.server_url }}/${{ github.repository }}", "branch": "${{ github.head_ref || github.ref_name }}" }
+          ]
+          EOF
+          cat apps.json
+
+      - name: Build custom image (uv pip install -e on Python 3.14)
+        env:
+          DOCKER_BUILDKIT: "1"
+        run: |
+          docker build \
+            --secret id=apps_json,src=apps.json \
+            --build-arg FRAPPE_BRANCH=version-16 \
+            --build-arg CACHE_BUST=${{ github.sha }} \
+            --tag erpnextswiss-custom:ci \
+            --file frappe_docker/images/custom/Containerfile \
+            frappe_docker
+
+      - name: Start database + redis
+        env:
+          ERPNEXTSWISS_IMAGE: erpnextswiss-custom:ci
+        run: |
+          docker compose -f .github/helper/docker-compose-ci.yml up -d db redis-cache redis-queue
+          for i in $(seq 1 40); do
+            h=$(docker inspect --format '{{.State.Health.Status}}' $(docker compose -f .github/helper/docker-compose-ci.yml ps -q db) 2>/dev/null || true)
+            echo "db health: $h"; [ "$h" = "healthy" ] && break; sleep 4
+          done
+
+      - name: Configure bench (db/redis)
+        env:
+          ERPNEXTSWISS_IMAGE: erpnextswiss-custom:ci
+        run: docker compose -f .github/helper/docker-compose-ci.yml run --rm configurator
+
+      - name: Create site + install-app erpnext/hrms/erpnextswiss
+        env:
+          ERPNEXTSWISS_IMAGE: erpnextswiss-custom:ci
+        run: docker compose -f .github/helper/docker-compose-ci.yml run --rm create-site
+
+      - name: bench migrate
+        env:
+          ERPNEXTSWISS_IMAGE: erpnextswiss-custom:ci
+        run: docker compose -f .github/helper/docker-compose-ci.yml run --rm backend bench --site test.localhost migrate
+
+      - name: bench build --app erpnextswiss
+        env:
+          ERPNEXTSWISS_IMAGE: erpnextswiss-custom:ci
+        run: docker compose -f .github/helper/docker-compose-ci.yml run --rm backend bench build --app erpnextswiss
+
+      - name: Smoke test (core feature modules + XSD validator)
+        env:
+          ERPNEXTSWISS_IMAGE: erpnextswiss-custom:ci
+        run: docker compose -f .github/helper/docker-compose-ci.yml run --rm backend bench --site test.localhost execute erpnextswiss.erpnextswiss.smoke_test.run
+
+      - name: Tear down
+        if: ${{ always() }}
+        env:
+          ERPNEXTSWISS_IMAGE: erpnextswiss-custom:ci
+        run: docker compose -f .github/helper/docker-compose-ci.yml down -v || true
