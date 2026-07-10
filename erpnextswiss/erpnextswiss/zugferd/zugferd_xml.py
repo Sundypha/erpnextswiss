@@ -108,7 +108,10 @@ def prepare_data(sales_invoice):
         })
         if sinv.taxes_and_charges:
             _taxes = frappe.get_doc("Sales Taxes and Charges Template", sinv.taxes_and_charges)
-            _tax_category = _taxes.get("tax_category")
+            # NB: this is erpnextswiss's ZUGFeRD/UNCL-5305 tax category (a Select of
+            # S/AE/E/K/... codes), renamed from `tax_category` to avoid colliding with
+            # ERPNext v16's standard `tax_category` Link field on this doctype.
+            _tax_category = _taxes.get("zugferd_tax_category")
             data['tax_category'] = (_tax_category or "S").split(':')[0]
         data['items'] = []
         for item in sinv.items:
